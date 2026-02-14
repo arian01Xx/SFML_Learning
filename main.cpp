@@ -73,6 +73,24 @@ int main(){
             if (event->is<sf::Event::Closed>()) window.close();
         }
 
+        //mueve a la izquierda
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)) shape.move({-0.1f, 0.f});
+        //mueve a la derecha
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) shape.move({0.1f, 0.f});
+        //mueve hacia arriba
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up)) shape.move({0.f, -1.f});
+        //mueve hacia abajo 
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down)) shape.move({0.f, 1.f});
+
+        //mueve a la izquierda
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A)) rectangle.move({-0.1f, 0.f});
+        //mueve a la derecha
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)) rectangle.move({0.1f, 0.f});
+        //mueve hacia arriba
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)) rectangle.move({0.f, -1.f});
+        //mueve hacia abajo 
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) rectangle.move({0.f, 1.f});
+
         window.clear(); //fondo negro
 
         window.draw(shape); //para que dibuje las figuras creadas
@@ -91,3 +109,33 @@ int main(){
 }
 
 //g++ main.o -o main -lsfml-graphics -lsfml-window -lsfml-system
+
+/*NIVEL 1
+ for (int y = 0; y < map.size(); y++)
+{
+    for (int x = 0; x < map[y].size(); x++)
+    {
+        sprite.setPosition(x * tileSize, y * tileSize);
+
+        if (map[y][x] == 0)
+            sprite.setTexture(grass);
+        else if (map[y][x] == 1)
+            sprite.setTexture(wall);
+        else if (map[y][x] == 2)
+            sprite.setTexture(box);
+
+        window.draw(sprite);
+    }
+}
+ */
+
+/*NIVEL 2
+ std::vector<int> map(width * height);
+map[y * width + x]
+  */
+
+/*NIVEL 3
+ sf::VertexArray tiles(sf::Quads, width * height * 4);
+
+ */
+
