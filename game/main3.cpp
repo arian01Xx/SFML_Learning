@@ -245,11 +245,9 @@ void execute(){
     //------------------------------------------------------
     //--------------LETRERO DE PERDISTE---------------------
     sf::Font font;
-    if(!font.loadFromFile("arial.ttf")) std::cerr<<"No se pudo cargar la fuente\n";
+    if(!font.openFromFile("arial.ttf")) std::cerr<<"No se pudo cargar la fuente\n";
     
-    sf::Text text;
-    text.setFont(font);
-    text.setCharacterSize(70);
+    sf::Text text(font, "", 70);
     text.setFillColor(sf::Color::White);
     //------------------------------------------------------
 
@@ -272,8 +270,15 @@ void execute(){
 
         if(game){
             if(timer>delay){ //si acumula suficiente tiempo arranca la logica
-                _snake.update(_platform, _apple, game); //actualiza mapa
+                game=_snake.update(_platform, _apple, game); //actualiza mapa
                 timer-=delay; //resta el timer para empezar todo de nuevo
+            }
+        }else{
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Enter)){
+                _snake.init();
+                _apple.init(_platform, _snake.returnBody());
+                game=true;
+                timer=0;
             }
         }
 
@@ -287,10 +292,10 @@ void execute(){
         _snake.draw(window, alpha); //dibuja por donde va
 
         if(!game){
-            text.setString("PERDISTE\nScore: " + std::to_string(_snake.Score));
+            text.setString("PERDISTE\nScore: " + std::to_string(_snake.Score()));
             text.setPosition(
-                    (_platform.col*TILE)/4,
-                    (_platform.row*TILE)/3
+                    sf::Vector2f((_platform.col*TILE)/4,
+                    (_platform.row*TILE)/3)
             );
             window.draw(text);
         }
@@ -298,6 +303,8 @@ void execute(){
         window.display(); //finalizar el frame actual
     }
 }
+
+//INPUT -> UPDATE -> RENDER
 
 int main(){ 
     execute();
