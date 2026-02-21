@@ -29,7 +29,7 @@ int main(){
     sf::Font font; 
     if(!font.openFromFile("arial.ttf")){
         std::cerr<<"Error loading font file"<<std::endl;
-        return -1;
+        return -;
     }
 
     //2. CREATE A TEXT OBJECT AND SET ITS PROPERTIES
