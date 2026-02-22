@@ -15,6 +15,8 @@ struct World{
     int player1_rows[3]={0};
     int player2_rows[3]={0};
 
+    int score1=0, score2=0;
+
     std::vector<std::vector<int>> world={
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
         {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
@@ -209,27 +211,39 @@ struct Ball{
         int ny=y+dy;
 
         //AVANZA IZQUIERDA (player1)
-        if(ny<=2 && dy<0 && (verify(nx, player1) || verify(nx, player2))){
+        if(dy<0 && ny<=2 && verify(nx, player1)){
             dy=1;
 
             int center=player1[player1.size()/2];
             dx=std::clamp(nx-center, -MAX_ANGLE, MAX_ANGLE);
+
+            if(dy<0){
+                (*_world)->score2++; 
+            }
         }
 
         //AVANZA DERECHA (player2) 
-        if(dy>0 && ny>=(*_world)->col-3 && (verify(nx, player2) || verify(nx, player1))){
+        if(dy>0 && ny>=(*_world)->col-3 && verify(nx, player2)){
             dy=-1;
 
             int center=player2[player2.size()/2]; 
             dx=std::clamp(nx-center, -MAX_ANGLE, MAX_ANGLE);
+
+            if(dy>=(*_world)->col-1){
+                (*_world)->score1++; 
+            }
         }
 
-        if(ny<1) dy=1;
-        if(ny > (*_world)->col-2) dy=-1;
+        //ZONA DE IDENTIFICACION DE META
+        if(dy<0 && ny<1) (*_world)->score2++;
+        if(dy>0 && ny>(*_world)->col-2) (*_world)->score1++;
 
         //TECHO/SUELO
         if(nx<1) dx=1;
         if(nx>(*_world)->row-2) dx=-1;
+
+        if(ny<1) dy=1;
+        if(ny > (*_world)->col-2) dy=-1; 
 
         prev_x=x;
         prev_y=y;
@@ -247,12 +261,41 @@ struct Ball{
     }
 };
 
+namespace Score{
+    struct FirstScore{
+        virtual void Run(sf::RenderWindow& window, sf::Text& text, World*& _world){
+            text.setString(std::to_string(_world->score1));
+            text.setPosition(
+                    sf::Vector2f(20*TILE,5*TILE)
+            );
+
+            window.draw(text);
+        }
+    };
+
+    struct SecondScore: FirstScore{
+        void Run(sf::RenderWindow& window, sf::Text& text, World*& _world) override{
+            text.setString(std::to_string(_world->score2));
+            text.setPosition(
+                    sf::Vector2f(40*TILE, 5*TILE)
+            );
+
+            window.draw(text);
+        }
+    };
+} 
+
 void execute(){
 
     World* _world=new World;
     Player1* _player1=new Player1;
     Player2* _player2=new Player2;
     Ball* _ball=new Ball;
+
+    Score::FirstScore* firstScore=new Score::FirstScore;
+    Score::SecondScore* secondScore=new Score::SecondScore;
+
+    bool game=true;
 
     _player1->init(&_world); //inicializa posicion seguro
     _player2->init(&_world);
@@ -266,19 +309,24 @@ void execute(){
         "Pong"
     };
 
-    //---------------------
+    //-----------------------------------------------
     sf::Clock clock;
     float timer=0;
     float delay=0.07;
-    //---------------------
+    //-----------------------------------------------
+    
+    //-----------NUMEROS DE PUNTAJE------------------
+    sf::Font font;
+    if(!font.openFromFile("arial.ttf")) std::cerr<<"No se pudo cargar la fuente\n";
+
+    sf::Text text(font, "", 70);
+    text.setFillColor(sf::Color::White);
+    //-----------------------------------------------
 
     while(window.isOpen()){
         while(const std::optional event=window.pollEvent()){
             if(event->is <sf::Event::Closed>()) window.close();
-        }
-        //ZONA INPUT IBA AQUI, LO EH MOVIDO A ZONA CLOCK
-        //_player1->handleInput(&_world);
-        //_player2->handleInput(&_world);
+        } 
 
         //---------------ZONA CLOCK---------------------------
         float t=clock.restart().asSeconds();
@@ -300,10 +348,12 @@ void execute(){
         _world->draw(window);
         _player1->draw(window, &_world, alpha);
         _player2->draw(window, &_world, alpha);
-        _ball->draw(window, alpha);
+        firstScore->Run(window, text, _world);
+        secondScore->Run(window, text, _world);
+        _ball->draw(window, alpha); 
 
         window.display(); 
-    }
+    } 
 }
 
 int main(){
