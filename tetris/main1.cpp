@@ -251,6 +251,7 @@ struct User{
     int prev_x=_x, prev_y=_y; //ESTADOS ANTERIORES
     int rotation_state=1;
     bool bottom_change=true;
+    bool rotatePressed=true;
 
     enum Figure{
         I_piece, O_piece, T_piece, S_piece, Z_piece,
@@ -336,9 +337,15 @@ struct User{
             if(_world->figure_selected.empty()) return;
             if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A)) move_left(_world);
             if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)) move_right(_world);
-            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::K)) 
-                    change_figure(_i_piece, _o_piece, _t_piece, _s_piece, _z_piece, _l_piece,
-                    _j_piece, _world);
+
+            bool currentK=sf::Keyboard::isKeyPressed(sf::Keyboard::Key::K);
+
+            if(currentK && !rotatePressed){ 
+                change_figure(_i_piece, _o_piece, _t_piece, _s_piece, _z_piece, _l_piece,
+                _j_piece, _world);
+            }
+
+            rotatePressed=currentK;
     } 
 
     void change_figure(
@@ -347,30 +354,61 @@ struct User{
             Z_PIECE*& _z_piece, L_PIECE*& _l_piece, 
             J_PIECE*& _j_piece,
             World*& _world){
+
+        if(figure==O_piece) return;
+        
+        auto backup=_world->figure_selected;
+        int old_state=rotation_state;
+
         rotation_state++;
         if(rotation_state>amount) rotation_state=1;
 
         if(figure==I_piece) _world->figure_selected=_i_piece->extractVector(rotation_state);
-        else if(figure==O_piece) return; //porque solo tiene uno, asi que no pase nada
+        //else if(figure==O_piece) return; //porque solo tiene uno, asi que no pase nada
         else if(figure==T_piece) _world->figure_selected=_t_piece->extractVector(rotation_state);
         else if(figure==S_piece) _world->figure_selected=_s_piece->extractVector(rotation_state);
         else if(figure==Z_piece) _world->figure_selected=_z_piece->extractVector(rotation_state);
         else if(figure==L_piece) _world->figure_selected=_l_piece->extractVector(rotation_state);
         else if(figure==J_piece) _world->figure_selected=_j_piece->extractVector(rotation_state);
+
+        //ROTACION INVALIDA
+        if(!canMove(_x, _y, _world)){
+            _world->figure_selected=backup;
+            rotation_state=old_state;
+        }
     }
 
     void move_left(World*& _world){
-        if(_y<=1) return; 
-        prev_y=_y;
-        _y--;
+        if(canMove(_x, _y-1, _world)){
+            prev_y=_y;
+            _y--;
+        }
     }
 
     void move_right(World*& _world){
-        int width=_world->figure_selected[0].size();
+        if(canMove(_x, _y+1, _world)){
+            prev_y=_y;
+            _y++;
+        }
+    }
 
-        if(_y+width>=_world->world[0].size()-1) return; 
-        prev_y=_y;
-        _y++;
+    bool canMove(int testX, int testY, World* _world){ //MOTOR DE COLISIONES UNIVERSAL
+        for(int i=0; i<_world->figure_selected.size(); i++){
+            for(int j=0; j<_world->figure_selected[i].size(); j++){
+                
+                if(_world->figure_selected[i][j]==0) continue;
+
+                int wx=testX+i;
+                int wy=testY+j;
+
+                if(wx<0 || wx>=_world->row) return false;
+                if(wy<0 || wy>=_world->col) return false;
+
+                if(_world->world[wx][wy]!=0) return false;
+            }
+        }
+
+        return true;
     }
 
     void inspection(World*& _world){
@@ -410,6 +448,37 @@ struct User{
                 }
             }
             _world->figure_selected.clear();
+            clearLines(_world);
+        }
+    }
+
+    void clearLines(World*& w){
+        for(int i=w->row-2; i>=1; i--){
+            bool full=true;
+
+            for(int j=1; j<w->col-1; j++){
+                if(w->world[i][j]==0){
+                    full=false;
+                    break;
+                }
+            }
+
+            if(full){
+                //BAJA T ODO
+                for(int x=i; x>0; x--){
+                    w->world[x]=w->world[x-1];
+                }
+
+                //FILA NUEVA ARRIBA
+                //w->world[0]=std::vector<int>(w->col, 0);
+                std::vector<int> newRow(w->col, 0);
+                newRow[0]=1;
+                newRow[w->col-1]=1;
+                w->world[0]=newRow;
+
+                //VOLVER A REVISAR LA MISMA FILA
+                i++;
+            }
         }
     }
 
@@ -488,8 +557,11 @@ void execute(){
         timer+=t;
 
         if(timer>delay){ 
-            _user->inspection(_world);
-            if(!_world->figure_selected.empty()) _user->_x++;
+            //_user->inspection(_world);
+            //if(!_world->figure_selected.empty()) _user->_x++;
+            if(_user->canMove(_user->_x+1, _user->_y, _world)) _user->_x++;
+            else _user->inspection(_world);
+            
             _user->handleInput(_i_piece, _o_piece, _t_piece, _s_piece, _z_piece, _l_piece, _j_piece, _world);
             timer-=delay;
         }
