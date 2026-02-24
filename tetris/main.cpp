@@ -70,6 +70,7 @@ struct World{
                     wall.setPosition({float(j*TILE), 
                                       float(i*TILE)});
                     window.draw(wall);
+                    if(world[i][j]==2) wall.setFillColor(sf::Color::Green);
                 } 
             }
         }
