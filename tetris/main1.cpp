@@ -502,7 +502,7 @@ struct User{
                 std::vector<int> newRow(w->col, 0);
                 newRow[0]=1;
                 newRow[w->col-1]=1;
-                w->world[0]=newRow;
+                w->world[1]=newRow;
 
                 //VOLVER A REVISAR LA MISMA FILA
                 i++;
@@ -638,6 +638,18 @@ void execute(){
 
 int main(){
     execute();
+
+    // sale del loop principal
+    delete _world;
+    delete _user;
+    delete _i_piece;
+    delete _o_piece;
+    delete _t_piece;
+    delete _s_piece;
+    delete _z_piece;
+    delete _l_piece;
+    delete _j_piece;
+
     return 0;
 }
 
